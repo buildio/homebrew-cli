@@ -1,5 +1,5 @@
 class Bld < Formula
-  desc "Add *bld* to your shell to interact with your Build.io applications"
+  desc "Build.io CLI - Command Line Interface for Build.io Platform"
   homepage "https://build.io"
   url "https://github.com/buildio/cli/archive/refs/tags/v0.1.2.tar.gz"
   sha256 "dbb138dd368b5e5aa71d9d3ac4a1d2e4660f765c64fb59fc7699d4c6d245acc2"
