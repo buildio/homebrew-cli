@@ -18,8 +18,6 @@ class Bld < Formula
     system "shards", "build", "--production", "--release", "--no-debug"
     system "strip", "./bin/bld"
     bin.install "./bin/bld"
-    ohai "----> Login to Build.io to get started."
-    ohai "      bld login"
   end
 
   test do
