@@ -21,6 +21,7 @@ class Bld < Formula
   end
 
   test do
-    assert_match version.to_s, shell_output("#{bin}/bld --version").chomp
+    assert_match "Error: not logged in",
+      shell_output("#{bin}/bld whoami 2>&1", 1)
   end
 end
