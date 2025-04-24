@@ -1,8 +1,8 @@
 class Bld < Formula
   desc "Add *bld* to your shell to interact with your Build.io applications"
   homepage "https://build.io"
-  url "https://github.com/buildio/cli/archive/refs/tags/v0.1.9.tar.gz"
-  sha256 "1c015352024c5ff26e55156a9943b63f03f88eafed140d0fd68a9640765eeb88"
+  url "https://github.com/buildio/cli/archive/refs/tags/v0.2.0.tar.gz"
+  sha256 "d1b8515cd0dded4b5faf6b388efc007a30f1aed308ba7cb3db630178fe72ffd8"
   license "AGPL-3.0-or-later"
 
   livecheck do
@@ -11,7 +11,7 @@ class Bld < Formula
   end
 
   depends_on "libssh2" => :build
-  depends_on "crystal"
+  depends_on "crystal" => :build
 
   def install
     mkdir bin
