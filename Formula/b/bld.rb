@@ -10,6 +10,7 @@ class Bld < Formula
     regex(/^v?(\d+(?:\.\d+)+)$/i)
   end
 
+  depends_on "openssl@3" => :build
   depends_on "libssh2" => :build
   depends_on "crystal" => :build
 
