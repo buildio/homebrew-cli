@@ -1,0 +1,54 @@
+name: Update Homebrew Formula
+
+on:
+  repository_dispatch:
+    types: [cli-released]
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'CLI release tag (e.g. v1.2.0)'
+        required: true
+        type: string
+
+jobs:
+  update-formula:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Determine tag
+        id: tag
+        run: |
+          if [ "${{ github.event_name }}" = "repository_dispatch" ]; then
+            echo "value=${{ github.event.client_payload.tag }}" >> $GITHUB_OUTPUT
+          else
+            echo "value=${{ github.event.inputs.tag }}" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Download tarball and compute sha256
+        id: sha
+        run: |
+          TAG="${{ steps.tag.outputs.value }}"
+          URL="https://github.com/buildio/cli/archive/refs/tags/${TAG}.tar.gz"
+          curl -sL "$URL" -o release.tar.gz
+          SHA=$(sha256sum release.tar.gz | awk '{print $1}')
+          echo "sha256=$SHA" >> $GITHUB_OUTPUT
+          echo "url=$URL" >> $GITHUB_OUTPUT
+          echo "version=${TAG#v}" >> $GITHUB_OUTPUT
+
+      - name: Update formula
+        run: |
+          sed -i "s|url \".*\"|url \"${{ steps.sha.outputs.url }}\"|" Formula/b/bld.rb
+          sed -i "s|sha256 \".*\"|sha256 \"${{ steps.sha.outputs.sha256 }}\"|" Formula/b/bld.rb
+
+      - name: Commit and push
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add Formula/b/bld.rb
+          if git diff --cached --quiet; then
+            echo "No changes to commit"
+          else
+            git commit -m "Update bld to ${{ steps.sha.outputs.version }}"
+            git push
+          fi
