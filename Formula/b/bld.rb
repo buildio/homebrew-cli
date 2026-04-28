@@ -17,6 +17,11 @@ class Bld < Formula
   depends_on "pkg-config" => :build
 
   def install
+    ENV["CRYSTAL_LIBRARY_PATH"] = [
+      Formula["pcre"].opt_lib,
+      Formula["openssl@3"].opt_lib,
+      Formula["libssh2"].opt_lib,
+    ].join(":")
     mkdir bin
     system "shards", "build", "--production", "--release", "--no-debug"
     system "strip", "./bin/bld"
