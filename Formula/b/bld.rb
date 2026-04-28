@@ -13,6 +13,7 @@ class Bld < Formula
   depends_on "crystal" => :build
   depends_on "libssh2" => :build
   depends_on "openssl@3" => :build
+  depends_on "pkg-config" => :build
 
   def install
     mkdir bin
