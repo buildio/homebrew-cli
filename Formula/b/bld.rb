@@ -1,8 +1,8 @@
 class Bld < Formula
   desc "Add *bld* to your shell to interact with your Build.io applications"
   homepage "https://build.io"
-  url "https://github.com/buildio/cli/archive/refs/tags/v1.1.102.tar.gz"
-  sha256 "e33877a1ff594cf1f26720b12d85a7794783aa11648fd48ead530d74ff169c7d"
+  url "https://github.com/buildio/cli/archive/refs/tags/v1.1.103.tar.gz"
+  sha256 "8c11498e081e2981fef39a327a163e5ba040fd1e97567dbb579a3dea579b10a4"
   license "AGPL-3.0-or-later"
 
   livecheck do
