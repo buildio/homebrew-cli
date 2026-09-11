@@ -25,21 +25,110 @@ jobs:
             echo "value=${{ github.event.inputs.tag }}" >> $GITHUB_OUTPUT
           fi
 
-      - name: Download tarball and compute sha256
+      - name: Download release artifacts and compute sha256
         id: sha
         run: |
+          set -euo pipefail
+
           TAG="${{ steps.tag.outputs.value }}"
-          URL="https://github.com/buildio/cli/archive/refs/tags/${TAG}.tar.gz"
-          curl -sL "$URL" -o release.tar.gz
-          SHA=$(sha256sum release.tar.gz | awk '{print $1}')
-          echo "sha256=$SHA" >> $GITHUB_OUTPUT
-          echo "url=$URL" >> $GITHUB_OUTPUT
+          SOURCE_URL="https://github.com/buildio/cli/archive/refs/tags/${TAG}.tar.gz"
+          DARWIN_AMD64_URL="https://github.com/buildio/cli/releases/download/${TAG}/bld-darwin-amd64.zip"
+
+          download_with_retry() {
+            local url="$1"
+            local output="$2"
+
+            for attempt in $(seq 1 30); do
+              if curl -fsSL "$url" -o "$output"; then
+                return 0
+              fi
+
+              echo "Waiting for $url ($attempt/30)"
+              sleep 20
+            done
+
+            curl -fSL "$url" -o "$output"
+          }
+
+          download_with_retry "$SOURCE_URL" release.tar.gz
+          download_with_retry "$DARWIN_AMD64_URL" bld-darwin-amd64.zip
+
+          SOURCE_SHA=$(sha256sum release.tar.gz | awk '{print $1}')
+          DARWIN_AMD64_SHA=$(sha256sum bld-darwin-amd64.zip | awk '{print $1}')
+
+          echo "source_sha=$SOURCE_SHA" >> $GITHUB_OUTPUT
+          echo "source_url=$SOURCE_URL" >> $GITHUB_OUTPUT
+          echo "darwin_amd64_sha=$DARWIN_AMD64_SHA" >> $GITHUB_OUTPUT
+          echo "darwin_amd64_url=$DARWIN_AMD64_URL" >> $GITHUB_OUTPUT
           echo "version=${TAG#v}" >> $GITHUB_OUTPUT
 
       - name: Update formula
         run: |
-          sed -i "s|url \".*\"|url \"${{ steps.sha.outputs.url }}\"|" Formula/b/bld.rb
-          sed -i "s|sha256 \".*\"|sha256 \"${{ steps.sha.outputs.sha256 }}\"|" Formula/b/bld.rb
+          python3 - <<'PY'
+          import os
+          import re
+          from pathlib import Path
+
+          path = Path("Formula/b/bld.rb")
+          text = path.read_text()
+
+          source_replacements = [
+              (
+                  r'(^  url ")[^"]+(")',
+                  rf'\g<1>{os.environ["SOURCE_URL"]}\2',
+                  1,
+              ),
+              (
+                  r'(^  sha256 ")[^"]+(")',
+                  rf'\g<1>{os.environ["SOURCE_SHA"]}\2',
+                  1,
+              ),
+          ]
+
+          for pattern, replacement, count in source_replacements:
+              text, changed = re.subn(pattern, replacement, text, count=count, flags=re.MULTILINE)
+              if changed != count:
+                  raise SystemExit(f"Expected {count} replacement for {pattern}, got {changed}")
+
+          resource_block = (
+              '  resource "darwin-amd64" do\n'
+              f'    url "{os.environ["DARWIN_AMD64_URL"]}"\n'
+              f'    sha256 "{os.environ["DARWIN_AMD64_SHA"]}"\n'
+              '  end\n'
+              '\n'
+          )
+
+          if 'resource "darwin-amd64"' in text:
+              resource_replacements = [
+                  (
+                      r'(^    url ")[^"]+(")',
+                      rf'\g<1>{os.environ["DARWIN_AMD64_URL"]}\2',
+                      1,
+                  ),
+                  (
+                      r'(^    sha256 ")[^"]+(")',
+                      rf'\g<1>{os.environ["DARWIN_AMD64_SHA"]}\2',
+                      1,
+                  ),
+              ]
+
+              for pattern, replacement, count in resource_replacements:
+                  text, changed = re.subn(pattern, replacement, text, count=count, flags=re.MULTILINE)
+                  if changed != count:
+                      raise SystemExit(f"Expected {count} replacement for {pattern}, got {changed}")
+          else:
+              needle = '  unless OS.mac? && Hardware::CPU.intel? && version >= Version.new(DARWIN_AMD64_BINARY_MIN_VERSION)\n'
+              if needle not in text:
+                  raise SystemExit("Formula is missing the Darwin AMD64 dependency guard")
+              text = text.replace(needle, resource_block + needle, 1)
+
+          path.write_text(text)
+          PY
+        env:
+          SOURCE_URL: ${{ steps.sha.outputs.source_url }}
+          SOURCE_SHA: ${{ steps.sha.outputs.source_sha }}
+          DARWIN_AMD64_URL: ${{ steps.sha.outputs.darwin_amd64_url }}
+          DARWIN_AMD64_SHA: ${{ steps.sha.outputs.darwin_amd64_sha }}
 
       - name: Commit and push
         run: |

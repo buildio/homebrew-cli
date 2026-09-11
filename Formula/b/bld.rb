@@ -5,18 +5,29 @@ class Bld < Formula
   sha256 "eafc9b7b89c254695bc4d2396bcdfb208bb0ffae3cecefc77dbf4f9b55abf788"
   license "AGPL-3.0-or-later"
 
+  DARWIN_AMD64_BINARY_MIN_VERSION = "1.1.107"
+
   livecheck do
     url :stable
     regex(/^v?(\d+(?:\.\d+)+)$/i)
   end
 
-  depends_on "crystal" => :build
-  depends_on "libssh2" => :build
-  depends_on "openssl@3" => :build
-  depends_on "pcre" => :build
-  depends_on "pkg-config" => :build
+  unless OS.mac? && Hardware::CPU.intel? && version >= Version.new(DARWIN_AMD64_BINARY_MIN_VERSION)
+    depends_on "crystal" => :build
+    depends_on "libssh2" => :build
+    depends_on "openssl@3" => :build
+    depends_on "pcre" => :build
+    depends_on "pkg-config" => :build
+  end
 
   def install
+    if OS.mac? && Hardware::CPU.intel? && version >= Version.new(DARWIN_AMD64_BINARY_MIN_VERSION)
+      resource("darwin-amd64").stage do
+        bin.install "bld"
+      end
+      return
+    end
+
     ENV["CRYSTAL_LIBRARY_PATH"] = [
       Formula["pcre"].opt_lib,
       Formula["openssl@3"].opt_lib,
