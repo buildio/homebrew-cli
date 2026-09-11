@@ -5,14 +5,14 @@ class Bld < Formula
   sha256 "eafc9b7b89c254695bc4d2396bcdfb208bb0ffae3cecefc77dbf4f9b55abf788"
   license "AGPL-3.0-or-later"
 
-  DARWIN_AMD64_BINARY_MIN_VERSION = "1.1.107"
+  DARWIN_AMD64_BINARY_MIN_VERSION = "1.1.107".freeze
 
   livecheck do
     url :stable
     regex(/^v?(\d+(?:\.\d+)+)$/i)
   end
 
-  unless OS.mac? && Hardware::CPU.intel? && version >= Version.new(DARWIN_AMD64_BINARY_MIN_VERSION)
+  if !OS.mac? || !Hardware::CPU.intel? || version < Version.new(DARWIN_AMD64_BINARY_MIN_VERSION)
     depends_on "crystal" => :build
     depends_on "libssh2" => :build
     depends_on "openssl@3" => :build
@@ -29,9 +29,9 @@ class Bld < Formula
     end
 
     ENV["CRYSTAL_LIBRARY_PATH"] = [
-      Formula["pcre"].opt_lib,
-      Formula["openssl@3"].opt_lib,
-      Formula["libssh2"].opt_lib,
+      formula_opt_lib("pcre"),
+      formula_opt_lib("openssl@3"),
+      formula_opt_lib("libssh2"),
     ].join(":")
     mkdir bin
     system "shards", "build", "--production", "--release", "--no-debug"
