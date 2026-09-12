@@ -1,8 +1,8 @@
 class Bld < Formula
   desc "Add *bld* to your shell to interact with your Build.io applications"
   homepage "https://build.io"
-  url "https://github.com/buildio/cli/archive/refs/tags/v1.1.112.tar.gz"
-  sha256 "ab77600f8b8446d947ceda7edb0fe8f15a3c1c891b6bf83e719814650a967935"
+  url "https://github.com/buildio/cli/archive/refs/tags/v1.1.113.tar.gz"
+  sha256 "d2007cbd2148b62ce302fdff3c11dcbb0f484265307a2b8b7a9d87b616759262"
   license "AGPL-3.0-or-later"
 
   DARWIN_AMD64_BINARY_MIN_VERSION = "1.1.107".freeze
@@ -13,8 +13,8 @@ class Bld < Formula
   end
 
   resource "darwin-amd64" do
-    url "https://github.com/buildio/cli/releases/download/v1.1.112/bld-darwin-amd64.zip"
-    sha256 "4ec9dfbe31a758593a203fdab8765d1a89ce022c535be296e5d5c5e290766ff4"
+    url "https://github.com/buildio/cli/releases/download/v1.1.113/bld-darwin-amd64.zip"
+    sha256 "791a0e9a77db15f961eaa263e0d9151d11ed59c1b472892834bb9b0333021421"
   end
 
   if !OS.mac? || !Hardware::CPU.intel? || version < Version.new(DARWIN_AMD64_BINARY_MIN_VERSION)
